@@ -1,1 +1,391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pemeriksa Selisih Data (ZONAMAIN vs DOCS)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --border: #334155;
+      --accent: #6366f1;
+      --mismatch-bg: #881337;
+      --mismatch-border: #f43f5e;
+      --zm-bg: #78350f;
+      --zm-border: #f59e0b;
+      --docs-bg: #4c1d95;
+      --docs-border: #a855f7;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 160px;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 22px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #334155;
+      color: var(--text);
+    }
+
+    .results-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #090d16;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid;
+    }
+
+    .badge-mismatch {
+      background: var(--mismatch-bg);
+      border-color: var(--mismatch-border);
+      color: #fb7185;
+    }
+
+    .badge-zm {
+      background: var(--zm-bg);
+      border-color: var(--zm-border);
+      color: #fbbf24;
+    }
+
+    .badge-docs {
+      background: var(--docs-bg);
+      border-color: var(--docs-border);
+      color: #c084fc;
+    }
+
+    .text-mono {
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Pemeriksa Selisih Data: ZONAMAIN vs DOCS</h1>
+    <p style="color: var(--text-dim); font-size: 0.85rem;">Hanya menampilkan data yang selisih/berbeda di antara kedua platform.</p>
+  </div>
+
+  <div class="grid-container">
+    <div class="card">
+      <h2>Tempel Data ZONAMAIN</h2>
+      <textarea id="zonamainInput" placeholder="Tempel ZONAMAIN di sini..."></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Tempel Data DOCS</h2>
+      <textarea id="docsInput" placeholder="Tempel DOCS di sini..."></textarea>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="bandingkanData()">Cek Selisih Data</button>
+    <button class="btn-secondary" onclick="resetForm()">Reset</button>
+  </div>
+
+  <div class="results-card">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>STATUS</th>
+            <th>USER ID</th>
+            <th>ORDER ID</th>
+            <th>NOMINAL</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody">
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
+              Silakan tempel kedua data lalu klik "Cek Selisih Data".
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function parseZonamain(text) {
+      const records = {};
+      const blocks = text.split(/(?=Order\s*:\s*IDT-)/i);
+
+      blocks.forEach(block => {
+        if (!block.trim()) return;
+
+        const orderMatch = block.match(/Order\s*:\s*(IDT-[a-f0-9-]+)/i);
+        if (!orderMatch) return;
+
+        const orderId = orderMatch[1].trim();
+        let username = "";
+        let rawNominal = 0;
+
+        const lines = block.split('\n');
+        for (let line of lines) {
+          line = line.trim();
+          const match = line.match(/^([a-zA-Z0-9_-]+?)[\s\t]*(\d{1,3}(?:[\.,]\d{3})+|\d+)(?:Validasi|$)/);
+          if (match && !line.includes("Order") && !line.includes("IDN") && !line.includes("WD") && !line.includes("Bank") && !line.includes("Nama") && !line.includes("No Rek")) {
+            username = match[1].trim();
+            const nomStr = match[2].replace(/[\.,]/g, '');
+            rawNominal = parseInt(nomStr, 10) || 0;
+            break;
+          }
+        }
+
+        records[orderId] = {
+          orderId: orderId,
+          userId: username,
+          rawNominal: rawNominal,
+          formattedNominal: rawNominal.toLocaleString('en-US')
+        };
+      });
+
+      return records;
+    }
+
+    function parseDocs(text) {
+      const records = {};
+      const lines = text.split('\n');
+
+      lines.forEach(line => {
+        line = line.trim();
+        if (!line) return;
+
+        // Mendukung dengan/tanpa spasi antara USERID dan ORDERID (IDT-...)
+        const match = line.match(/^([a-zA-Z0-9_-]+?)[\s\t]*(IDT-[a-f0-9-]+)[\s\t]*\(?([0-9\.,]+)\)?/i);
+        if (match) {
+          const userId = match[1].trim();
+          const orderId = match[2].trim();
+          const nomStr = match[3].replace(/[\.,]/g, '');
+          const rawNominal = parseInt(nomStr, 10) || 0;
+
+          records[orderId] = {
+            orderId: orderId,
+            userId: userId,
+            rawNominal: rawNominal,
+            formattedNominal: rawNominal.toLocaleString('en-US')
+          };
+        }
+      });
+
+      return records;
+    }
+
+    function bandingkanData() {
+      const zmText = document.getElementById('zonamainInput').value;
+      const docsText = document.getElementById('docsInput').value;
+
+      const zmMap = parseZonamain(zmText);
+      const docsMap = parseDocs(docsText);
+
+      const allOrderIds = new Set([
+        ...Object.keys(zmMap),
+        ...Object.keys(docsMap)
+      ]);
+
+      const tbody = document.getElementById('resultBody');
+
+      if (allOrderIds.size === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
+              Data tidak terdeteksi. Pastikan format teks sesuai.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      let htmlRows = '';
+      let selisihCount = 0;
+
+      allOrderIds.forEach(orderId => {
+        const zm = zmMap[orderId];
+        const doc = docsMap[orderId];
+
+        let statusBadge = '';
+        let displayUser = '';
+        let displayNominal = '';
+        let isDifferent = false;
+
+        if (zm && !doc) {
+          // Ada di ZONAMAIN, TIDAK ADA di DOCS
+          isDifferent = true;
+          statusBadge = `<span class="badge badge-zm">CUMA ADA DI ZONAMAIN</span>`;
+          displayUser = zm.userId || '-';
+          displayNominal = zm.formattedNominal;
+        } 
+        else if (!zm && doc) {
+          // Ada di DOCS, TIDAK ADA di ZONAMAIN
+          isDifferent = true;
+          statusBadge = `<span class="badge badge-docs">CUMA ADA DI DOCS</span>`;
+          displayUser = doc.userId || '-';
+          displayNominal = doc.formattedNominal;
+        } 
+        else if (zm && doc) {
+          // Ada di KEDUANYA -> Cek apakah ada perbedaan
+          const isUserMatch = !zm.userId || !doc.userId || zm.userId === doc.userId;
+          const isNominalMatch = zm.rawNominal === doc.rawNominal;
+
+          if (!isUserMatch || !isNominalMatch) {
+            isDifferent = true;
+            statusBadge = `<span class="badge badge-mismatch">BEDA DATA</span>`;
+            displayUser = isUserMatch ? zm.userId : `${zm.userId} <span style="color: #f43f5e;">(DOCS: ${doc.userId})</span>`;
+            displayNominal = isNominalMatch ? zm.formattedNominal : `${zm.formattedNominal} <span style="color: #f43f5e;">(DOCS: ${doc.formattedNominal})</span>`;
+          }
+        }
+
+        // HANYA MAMPILKAN DATA YANG SELISIH/BERBEDA
+        if (isDifferent) {
+          selisihCount++;
+          htmlRows += `
+            <tr>
+              <td>${statusBadge}</td>
+              <td class="text-mono">${displayUser}</td>
+              <td class="text-mono" style="color: #38bdf8;">${orderId}</td>
+              <td class="text-mono">${displayNominal}</td>
+            </tr>
+          `;
+        }
+      });
+
+      if (selisihCount === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; color: #10b981; padding: 20px; font-weight: bold;">
+              ✔ Semua Data Cocok! Tidak ada selisih antara ZONAMAIN dan DOCS.
+            </td>
+          </tr>`;
+      } else {
+        tbody.innerHTML = htmlRows;
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('zonamainInput').value = '';
+      document.getElementById('docsInput').value = '';
+      document.getElementById('resultBody').innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
+            Silakan tempel kedua data lalu klik "Cek Selisih Data".
+          </td>
+        </tr>`;
+    }
+  </script>
+
+</body>
+</html>
