@@ -1,391 +1,818 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pemeriksa Selisih Data (ZONAMAIN vs DOCS)</title>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --text: #f8fafc;
-      --text-dim: #94a3b8;
-      --border: #334155;
-      --accent: #6366f1;
-      --mismatch-bg: #881337;
-      --mismatch-border: #f43f5e;
-      --zm-bg: #78350f;
-      --zm-border: #f59e0b;
-      --docs-bg: #4c1d95;
-      --docs-border: #a855f7;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Engine Rekon & Pembanding Data</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --danger-border: #ef4444;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --warning-border: #f59e0b;
+            --purple-border: #a855f7;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --success-border: #10b981;
+            
+            /* Style dari Zonamain */
+            --zm-accent: #6366f1;
+            --zm-mismatch-bg: #881337;
+            --zm-mismatch-border: #f43f5e;
+            --zm-bg: #78350f;
+            --zm-border: #f59e0b;
+            --zm-docs-bg: #4c1d95;
+            --zm-docs-border: #a855f7;
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding-bottom: 50px;
+        }
 
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      line-height: 1.5;
-    }
+        .navbar {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
 
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+        /* TAB STYLING */
+        .nav-tabs-custom {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-tabs-custom .nav-link {
+            color: var(--text-muted);
+            font-weight: 600;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        .nav-tabs-custom .nav-link.active {
+            color: var(--accent-color);
+            background-color: var(--card-bg);
+            border-bottom: 3px solid var(--accent-color);
+        }
+        .nav-tabs-custom .nav-link:hover:not(.active) {
+            color: var(--text-main);
+            border-bottom: 3px solid var(--border-color);
+        }
 
-    .header h1 {
-      font-size: 1.6rem;
-      margin-bottom: 6px;
-    }
+        .card-custom {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
 
-    .grid-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
+        textarea.form-control {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            color: #38bdf8;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
 
-    @media (max-width: 768px) {
-      .grid-container {
-        grid-template-columns: 1fr;
-      }
-    }
+        textarea.form-control:focus {
+            background-color: #090d16;
+            color: #38bdf8;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25);
+        }
 
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-    }
+        .stat-card {
+            border-left: 4px solid;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+        }
 
-    .card h2 {
-      font-size: 1rem;
-      margin-bottom: 10px;
-    }
+        .stat-danger { border-color: var(--danger-border); }
+        .stat-warning { border-color: var(--warning-border); }
+        .stat-purple { border-color: var(--purple-border); }
+        .stat-success { border-color: var(--success-border); }
 
-    textarea {
-      width: 100%;
-      height: 160px;
-      background: #090d16;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px;
-      color: #38bdf8;
-      font-family: monospace;
-      font-size: 0.85rem;
-      resize: vertical;
-    }
+        .table-custom {
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
 
-    textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
+        .table-custom th {
+            background-color: #090d16;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border-color);
+        }
 
-    .actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
+        .table-custom td {
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
 
-    button {
-      padding: 10px 22px;
-      border-radius: 6px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-    }
+        .mono, .text-mono {
+            font-family: monospace;
+        }
 
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
+        .btn-copy {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
 
-    .btn-secondary {
-      background: #334155;
-      color: var(--text);
-    }
+        .btn-copy:hover {
+            background-color: var(--accent-color);
+            color: #0f172a;
+        }
 
-    .results-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px;
-    }
+        .badge-minus {
+            color: #f87171;
+            font-weight: 600;
+        }
 
-    .table-container {
-      overflow-x: auto;
-    }
+        .btn-process {
+            background-color: #0284c7;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            border: none;
+            box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.39);
+            transition: all 0.2s ease;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-      text-align: left;
-    }
+        .btn-process:hover {
+            background-color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(2, 132, 199, 0.5);
+            color: #ffffff;
+        }
 
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      background: #090d16;
-      color: var(--text-dim);
-      font-size: 0.78rem;
-      text-transform: uppercase;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      border: 1px solid;
-    }
-
-    .badge-mismatch {
-      background: var(--mismatch-bg);
-      border-color: var(--mismatch-border);
-      color: #fb7185;
-    }
-
-    .badge-zm {
-      background: var(--zm-bg);
-      border-color: var(--zm-border);
-      color: #fbbf24;
-    }
-
-    .badge-docs {
-      background: var(--docs-bg);
-      border-color: var(--docs-border);
-      color: #c084fc;
-    }
-
-    .text-mono {
-      font-family: monospace;
-    }
-  </style>
+        /* Badge Style Zonamain */
+        .zm-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid;
+        }
+        .badge-mismatch { background: var(--zm-mismatch-bg); border-color: var(--zm-mismatch-border); color: #fb7185; }
+        .badge-zm { background: var(--zm-bg); border-color: var(--zm-border); color: #fbbf24; }
+        .badge-docs { background: var(--zm-docs-bg); border-color: var(--zm-docs-border); color: #c084fc; }
+    </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>Pemeriksa Selisih Data: ZONAMAIN vs DOCS</h1>
-    <p style="color: var(--text-dim); font-size: 0.85rem;">Hanya menampilkan data yang selisih/berbeda di antara kedua platform.</p>
-  </div>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark py-3 mb-3">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1 d-flex align-items-center">
+                <i class="fa-solid fa-code-compare me-2 text-info"></i> Rekon Engine Hub
+            </span>
+        </div>
+    </nav>
 
-  <div class="grid-container">
-    <div class="card">
-      <h2>Tempel Data ZONAMAIN</h2>
-      <textarea id="zonamainInput" placeholder="Tempel ZONAMAIN di sini..."></textarea>
+    <div class="container-fluid px-4">
+        <!-- TAB NAVIGATION -->
+        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="rekonTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dash-tab" data-bs-toggle="tab" data-bs-target="#dashPane" type="button" role="tab">
+                    <i class="fa-solid fa-desktop me-2"></i>DASHBOARD TO DOCS
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="zm-tab" data-bs-toggle="tab" data-bs-target="#zmPane" type="button" role="tab">
+                    <i class="fa-solid fa-file-invoice me-2"></i>ZONAMAIN TO DOCS
+                </button>
+            </li>
+        </ul>
+
+        <!-- TAB CONTENT -->
+        <div class="tab-content" id="rekonTabsContent">
+            
+            <!-- ================= TAB 1: DASHBOARD TO DOCS ================= -->
+            <div class="tab-pane fade show active" id="dashPane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-info mb-0">Engine: DASHBOARD TO DOCS</h5>
+                    <div>
+                        <button class="btn btn-outline-info btn-sm me-2" onclick="loadSampleDataDash()">
+                            <i class="fa-solid fa-download me-1"></i> Muat Sample Data
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="resetAllDash()">
+                            <i class="fa-solid fa-rotate me-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <label class="form-label fw-bold text-info"><i class="fa-solid fa-desktop me-2"></i>RAW DATA DASHBOARD</label>
+                            <textarea id="rawDashboard" class="form-control" rows="8" placeholder="Paste Data Dashboard di sini..."></textarea>
+                            <small class="text-muted mt-1 d-block">*Nominal Dashboard otomatis dikurangi 1,500 & diubah ke format (X,XXX)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <label class="form-label fw-bold text-warning"><i class="fa-solid fa-file-lines me-2"></i>RAW DATA DOCS</label>
+                            <textarea id="rawDocs" class="form-control" rows="8" placeholder="Paste Data Docs di sini..."></textarea>
+                            <small class="text-muted mt-1 d-block">*Format UserID + IDT + (Nominal)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="row mb-4">
+                    <div class="col-12 text-center">
+                        <button class="btn btn-process btn-lg px-5 py-3 w-100 rounded-3" onclick="processDataDash()">
+                            <i class="fa-solid fa-play me-2"></i> PROSES & BANDINGKAN DATA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stat Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card stat-danger">
+                            <div class="text-muted small">ADA DI DASHBOARD, TIDAK ADA DI DOCS</div>
+                            <div class="fs-3 fw-bold text-danger" id="countDashOnly">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card stat-warning">
+                            <div class="text-muted small">ADA DI DOCS, TIDAK ADA DI DASHBOARD</div>
+                            <div class="fs-3 fw-bold text-warning" id="countDocsOnly">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card stat-purple">
+                            <div class="text-muted small">NOMINAL BERBEDA</div>
+                            <div class="fs-3 fw-bold text-purple" style="color: #a855f7;" id="countDiffAmount">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card stat-success">
+                            <div class="text-muted small">SINKRON / MATCH (SAMA)</div>
+                            <div class="fs-3 fw-bold text-success" id="countMatch">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Tables -->
+                <div class="row g-4">
+                    <!-- DASHBOARD ONLY -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-danger mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>ADA DI DASHBOARD TIDAK ADA DI DOCS</h6>
+                                <button class="btn btn-copy btn-sm" onclick="copyTable('tableDashOnly')"><i class="fa-regular fa-copy me-1"></i>Copy Hasil</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle" id="tableDashOnly">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>REFERENCE ID</th>
+                                            <th class="text-end">NOMINAL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td colspan="3" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DOCS ONLY -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-warning mb-0"><i class="fa-solid fa-circle-exclamation me-2"></i>ADA DI DOCS TIDAK ADA DI DASHBOARD</h6>
+                                <button class="btn btn-copy btn-sm" onclick="copyTable('tableDocsOnly')"><i class="fa-regular fa-copy me-1"></i>Copy Hasil</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle" id="tableDocsOnly">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>USER ID</th>
+                                            <th>REFERENCE ID</th>
+                                            <th class="text-end">NOMINAL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td colspan="4" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NOMINAL BERBEDA -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0" style="color: #a855f7;"><i class="fa-solid fa-scale-unbalanced me-2"></i>NOMINAL BERBEDA</h6>
+                                <button class="btn btn-copy btn-sm" onclick="copyTable('tableDiffAmount')"><i class="fa-regular fa-copy me-1"></i>Copy Hasil</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle" id="tableDiffAmount">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>REFERENCE ID</th>
+                                            <th class="text-end">NOMINAL DASHBOARD (-1,500)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td colspan="3" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MATCH -->
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-circle-check me-2"></i>DATA SINKRON (MATCH)</h6>
+                                <button class="btn btn-copy btn-sm" onclick="copyTable('tableMatch')"><i class="fa-regular fa-copy me-1"></i>Copy Hasil</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-custom align-middle" id="tableMatch">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>REFERENCE ID</th>
+                                            <th class="text-end">NOMINAL BERSIH</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td colspan="3" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: ZONAMAIN TO DOCS ================= -->
+            <div class="tab-pane fade" id="zmPane" role="tabpanel">
+                <div class="text-center mb-4">
+                    <h2 class="h4 fw-bold">Pemeriksa Selisih Data: ZONAMAIN vs DOCS</h2>
+                    <p class="text-muted small">Hanya menampilkan data yang selisih/berbeda di antara kedua platform.</p>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <h6 class="fw-bold text-light mb-2">Tempel Data ZONAMAIN</h6>
+                            <textarea id="zonamainInput" class="form-control" rows="7" placeholder="Tempel ZONAMAIN di sini..."></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card-custom p-3">
+                            <h6 class="fw-bold text-light mb-2">Tempel Data DOCS</h6>
+                            <textarea id="docsInput" class="form-control" rows="7" placeholder="Tempel DOCS di sini..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-center mb-4">
+                    <button class="btn btn-primary px-4 fw-bold" onclick="bandingkanData()">Cek Selisih Data</button>
+                    <button class="btn btn-secondary px-4 fw-bold" onclick="resetFormZM()">Reset</button>
+                </div>
+
+                <div class="card-custom p-3">
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>STATUS</th>
+                                    <th>USER ID</th>
+                                    <th>ORDER ID</th>
+                                    <th>NOMINAL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultBody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        Silakan tempel kedua data lalu klik "Cek Selisih Data".
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <div class="card">
-      <h2>Tempel Data DOCS</h2>
-      <textarea id="docsInput" placeholder="Tempel DOCS di sini..."></textarea>
-    </div>
-  </div>
-
-  <div class="actions">
-    <button class="btn-primary" onclick="bandingkanData()">Cek Selisih Data</button>
-    <button class="btn-secondary" onclick="resetForm()">Reset</button>
-  </div>
-
-  <div class="results-card">
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>STATUS</th>
-            <th>USER ID</th>
-            <th>ORDER ID</th>
-            <th>NOMINAL</th>
-          </tr>
-        </thead>
-        <tbody id="resultBody">
-          <tr>
-            <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
-              Silakan tempel kedua data lalu klik "Cek Selisih Data".
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <script>
-    function parseZonamain(text) {
-      const records = {};
-      const blocks = text.split(/(?=Order\s*:\s*IDT-)/i);
-
-      blocks.forEach(block => {
-        if (!block.trim()) return;
-
-        const orderMatch = block.match(/Order\s*:\s*(IDT-[a-f0-9-]+)/i);
-        if (!orderMatch) return;
-
-        const orderId = orderMatch[1].trim();
-        let username = "";
-        let rawNominal = 0;
-
-        const lines = block.split('\n');
-        for (let line of lines) {
-          line = line.trim();
-          const match = line.match(/^([a-zA-Z0-9_-]+?)[\s\t]*(\d{1,3}(?:[\.,]\d{3})+|\d+)(?:Validasi|$)/);
-          if (match && !line.includes("Order") && !line.includes("IDN") && !line.includes("WD") && !line.includes("Bank") && !line.includes("Nama") && !line.includes("No Rek")) {
-            username = match[1].trim();
-            const nomStr = match[2].replace(/[\.,]/g, '');
-            rawNominal = parseInt(nomStr, 10) || 0;
-            break;
-          }
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        /* ================= LOGIKA ENGINE 1: DASHBOARD TO DOCS ================= */
+        function formatMinus(val) {
+            let num = Math.abs(val);
+            return `(${num.toLocaleString('en-US')})`;
         }
 
-        records[orderId] = {
-          orderId: orderId,
-          userId: username,
-          rawNominal: rawNominal,
-          formattedNominal: rawNominal.toLocaleString('en-US')
-        };
-      });
-
-      return records;
-    }
-
-    function parseDocs(text) {
-      const records = {};
-      const lines = text.split('\n');
-
-      lines.forEach(line => {
-        line = line.trim();
-        if (!line) return;
-
-        // Mendukung dengan/tanpa spasi antara USERID dan ORDERID (IDT-...)
-        const match = line.match(/^([a-zA-Z0-9_-]+?)[\s\t]*(IDT-[a-f0-9-]+)[\s\t]*\(?([0-9\.,]+)\)?/i);
-        if (match) {
-          const userId = match[1].trim();
-          const orderId = match[2].trim();
-          const nomStr = match[3].replace(/[\.,]/g, '');
-          const rawNominal = parseInt(nomStr, 10) || 0;
-
-          records[orderId] = {
-            orderId: orderId,
-            userId: userId,
-            rawNominal: rawNominal,
-            formattedNominal: rawNominal.toLocaleString('en-US')
-          };
-        }
-      });
-
-      return records;
-    }
-
-    function bandingkanData() {
-      const zmText = document.getElementById('zonamainInput').value;
-      const docsText = document.getElementById('docsInput').value;
-
-      const zmMap = parseZonamain(zmText);
-      const docsMap = parseDocs(docsText);
-
-      const allOrderIds = new Set([
-        ...Object.keys(zmMap),
-        ...Object.keys(docsMap)
-      ]);
-
-      const tbody = document.getElementById('resultBody');
-
-      if (allOrderIds.size === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
-              Data tidak terdeteksi. Pastikan format teks sesuai.
-            </td>
-          </tr>`;
-        return;
-      }
-
-      let htmlRows = '';
-      let selisihCount = 0;
-
-      allOrderIds.forEach(orderId => {
-        const zm = zmMap[orderId];
-        const doc = docsMap[orderId];
-
-        let statusBadge = '';
-        let displayUser = '';
-        let displayNominal = '';
-        let isDifferent = false;
-
-        if (zm && !doc) {
-          // Ada di ZONAMAIN, TIDAK ADA di DOCS
-          isDifferent = true;
-          statusBadge = `<span class="badge badge-zm">CUMA ADA DI ZONAMAIN</span>`;
-          displayUser = zm.userId || '-';
-          displayNominal = zm.formattedNominal;
-        } 
-        else if (!zm && doc) {
-          // Ada di DOCS, TIDAK ADA di ZONAMAIN
-          isDifferent = true;
-          statusBadge = `<span class="badge badge-docs">CUMA ADA DI DOCS</span>`;
-          displayUser = doc.userId || '-';
-          displayNominal = doc.formattedNominal;
-        } 
-        else if (zm && doc) {
-          // Ada di KEDUANYA -> Cek apakah ada perbedaan
-          const isUserMatch = !zm.userId || !doc.userId || zm.userId === doc.userId;
-          const isNominalMatch = zm.rawNominal === doc.rawNominal;
-
-          if (!isUserMatch || !isNominalMatch) {
-            isDifferent = true;
-            statusBadge = `<span class="badge badge-mismatch">BEDA DATA</span>`;
-            displayUser = isUserMatch ? zm.userId : `${zm.userId} <span style="color: #f43f5e;">(DOCS: ${doc.userId})</span>`;
-            displayNominal = isNominalMatch ? zm.formattedNominal : `${zm.formattedNominal} <span style="color: #f43f5e;">(DOCS: ${doc.formattedNominal})</span>`;
-          }
+        function parseDashboard(text) {
+            let items = [];
+            let regex = /(IDT-[a-f0-9-]+)[\s\S]*?Rp\s*([0-9.,]+)/gi;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                let refId = match[1].trim();
+                let rawAmountStr = match[2].trim();
+                let cleanStr = rawAmountStr.split(',')[0].replace(/\./g, '');
+                let amount = parseInt(cleanStr, 10);
+                
+                if (!isNaN(amount)) {
+                    let amountNet = amount - 1500;
+                    items.push({
+                        refId: refId,
+                        rawAmount: amount,
+                        netAmount: amountNet,
+                        formatted: formatMinus(amountNet)
+                    });
+                }
+            }
+            return items;
         }
 
-        // HANYA MAMPILKAN DATA YANG SELISIH/BERBEDA
-        if (isDifferent) {
-          selisihCount++;
-          htmlRows += `
-            <tr>
-              <td>${statusBadge}</td>
-              <td class="text-mono">${displayUser}</td>
-              <td class="text-mono" style="color: #38bdf8;">${orderId}</td>
-              <td class="text-mono">${displayNominal}</td>
-            </tr>
-          `;
+        function parseDocsDash(text) {
+            let items = [];
+            let regex = /([a-zA-Z0-9_-]+)[\s\t\n]*(IDT-[a-f0-9-]+)[\s\t\n]*\(([^)]+)\)/gi;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                let userId = match[1].trim();
+                let refId = match[2].trim();
+                let amountStr = match[3].replace(/,/g, '').trim();
+                let amount = parseInt(amountStr, 10);
+
+                if (!isNaN(amount)) {
+                    items.push({
+                        userId: userId,
+                        refId: refId,
+                        amount: amount,
+                        formatted: formatMinus(amount)
+                    });
+                }
+            }
+            return items;
         }
-      });
 
-      if (selisihCount === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" style="text-align: center; color: #10b981; padding: 20px; font-weight: bold;">
-              ✔ Semua Data Cocok! Tidak ada selisih antara ZONAMAIN dan DOCS.
-            </td>
-          </tr>`;
-      } else {
-        tbody.innerHTML = htmlRows;
-      }
-    }
+        function processDataDash() {
+            let dashRaw = document.getElementById('rawDashboard').value;
+            let docsRaw = document.getElementById('rawDocs').value;
 
-    function resetForm() {
-      document.getElementById('zonamainInput').value = '';
-      document.getElementById('docsInput').value = '';
-      document.getElementById('resultBody').innerHTML = `
-        <tr>
-          <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 20px;">
-            Silakan tempel kedua data lalu klik "Cek Selisih Data".
-          </td>
-        </tr>`;
-    }
-  </script>
+            let dashItems = parseDashboard(dashRaw);
+            let docsItems = parseDocsDash(docsRaw);
 
+            let dashOnly = [];
+            let docsOnly = [];
+            let diffAmount = [];
+            let matched = [];
+
+            let matchedDocsIndexes = new Set();
+            let matchedDashIndexes = new Set();
+
+            dashItems.forEach((d, dIdx) => {
+                let foundIndex = docsItems.findIndex((doc, docIdx) => 
+                    !matchedDocsIndexes.has(docIdx) && 
+                    doc.refId === d.refId && 
+                    doc.amount === d.netAmount
+                );
+
+                if (foundIndex !== -1) {
+                    matchedDocsIndexes.add(foundIndex);
+                    matchedDashIndexes.add(dIdx);
+                    matched.push(d);
+                }
+            });
+
+            dashItems.forEach((d, dIdx) => {
+                if (matchedDashIndexes.has(dIdx)) return;
+
+                let foundIndex = docsItems.findIndex((doc, docIdx) => 
+                    !matchedDocsIndexes.has(docIdx) && 
+                    doc.refId === d.refId
+                );
+
+                if (foundIndex !== -1) {
+                    matchedDocsIndexes.add(foundIndex);
+                    matchedDashIndexes.add(dIdx);
+                    diffAmount.push(d);
+                }
+            });
+
+            dashItems.forEach((d, dIdx) => {
+                if (!matchedDashIndexes.has(dIdx)) {
+                    dashOnly.push(d);
+                }
+            });
+
+            docsItems.forEach((doc, docIdx) => {
+                if (!matchedDocsIndexes.has(docIdx)) {
+                    docsOnly.push(doc);
+                }
+            });
+
+            renderDashOnly(dashOnly);
+            renderDocsOnly(docsOnly);
+            renderDiffAmount(diffAmount);
+            renderMatch(matched);
+
+            document.getElementById('countDashOnly').innerText = dashOnly.length;
+            document.getElementById('countDocsOnly').innerText = docsOnly.length;
+            document.getElementById('countDiffAmount').innerText = diffAmount.length;
+            document.getElementById('countMatch').innerText = matched.length;
+        }
+
+        function renderDashOnly(data) {
+            let tbody = document.querySelector('#tableDashOnly tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Tidak ada data</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map((item, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td class="mono text-info">${item.refId}</td>
+                    <td class="text-end mono badge-minus">${item.formatted}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDocsOnly(data) {
+            let tbody = document.querySelector('#tableDocsOnly tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map((item, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td class="fw-bold text-light">${item.userId}</td>
+                    <td class="mono text-info">${item.refId}</td>
+                    <td class="text-end mono badge-minus">${item.formatted}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDiffAmount(data) {
+            let tbody = document.querySelector('#tableDiffAmount tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Tidak ada data nominal berbeda</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map((item, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td class="mono text-info">${item.refId}</td>
+                    <td class="text-end mono text-warning fw-bold">${item.formatted}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderMatch(data) {
+            let tbody = document.querySelector('#tableMatch tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Belum ada data match</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map((item, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td class="mono text-info">${item.refId}</td>
+                    <td class="text-end mono text-success fw-bold">${item.formatted}</td>
+                </tr>
+            `).join('');
+        }
+
+        function copyTable(tableId) {
+            let table = document.getElementById(tableId);
+            let rows = table.querySelectorAll('tr');
+            let lines = [];
+            rows.forEach(row => {
+                let cols = row.querySelectorAll('th, td');
+                let rowData = [];
+                cols.forEach(col => rowData.push(col.innerText.trim()));
+                if(rowData.length > 1) lines.push(rowData.join('\t'));
+            });
+            let textToCopy = lines.join('\n');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Tabel berhasil di-copy ke clipboard!');
+            });
+        }
+
+        function loadSampleDataDash() {
+            document.getElementById('rawDashboard').value = `9 Nov 2026, 23.28.07IDT-e96e3428-6de5-47dc-b08c-b1b0ab9960a3INDRATOGEL
+SMB
+DNID AXX BAEXXXXXX
+085218760114
+DANA Wallet
+DANA
+17942417078DkBvCiRp 128.500,00FAILED
+Sync Status9 Nov 2026, 23.28.07IDT-7d7a9f65-4d86-4740-833f-a976613327e1INDRATOGEL
+SMB
+EDI SUMAWAN
+775001001092535
+BRI
+002
+1794241707VGyeRSHRp 1.001.500,00FAILED
+Sync Status`;
+
+            document.getElementById('rawDocs').value = `persib33IDT-7d7a9f65-4d86-4740-833f-a976613327e1(127,000)p3sisir27IDT-c58aa4cb-d723-4f98-ad57-e35e3fdace6b(495,000)`;
+
+            processDataDash();
+        }
+
+        function resetAllDash() {
+            document.getElementById('rawDashboard').value = '';
+            document.getElementById('rawDocs').value = '';
+            document.querySelector('#tableDashOnly tbody').innerHTML = '<tr><td colspan="3" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>';
+            document.querySelector('#tableDocsOnly tbody').innerHTML = '<tr><td colspan="4" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>';
+            document.querySelector('#tableDiffAmount tbody').innerHTML = '<tr><td colspan="3" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>';
+            document.querySelector('#tableMatch tbody').innerHTML = '<tr><td colspan="3" class="text-center text-muted">Klik tombol "PROSES & BANDINGKAN DATA" untuk memproses</td></tr>';
+            document.getElementById('countDashOnly').innerText = '0';
+            document.getElementById('countDocsOnly').innerText = '0';
+            document.getElementById('countDiffAmount').innerText = '0';
+            document.getElementById('countMatch').innerText = '0';
+        }
+
+
+        /* ================= LOGIKA ENGINE 2: ZONAMAIN TO DOCS ================= */
+        function parseZonamain(text) {
+            const records = {};
+            const blocks = text.split(/(?=Order\s*:\s*IDT-)/i);
+
+            blocks.forEach(block => {
+                if (!block.trim()) return;
+
+                const orderMatch = block.match(/Order\s*:\s*(IDT-[a-f0-9-]+)/i);
+                if (!orderMatch) return;
+
+                const orderId = orderMatch[1].trim();
+                let username = "";
+                let rawNominal = 0;
+
+                const lines = block.split('\n');
+                for (let line of lines) {
+                    line = line.trim();
+                    const match = line.match(/^([a-zA-Z0-9_-]+?)[\s\t]*(\d{1,3}(?:[\.,]\d{3})+|\d+)(?:Validasi|$)/);
+                    if (match && !line.includes("Order") && !line.includes("IDN") && !line.includes("WD") && !line.includes("Bank") && !line.includes("Nama") && !line.includes("No Rek")) {
+                        username = match[1].trim();
+                        const nomStr = match[2].replace(/[\.,]/g, '');
+                        rawNominal = parseInt(nomStr, 10) || 0;
+                        break;
+                    }
+                }
+
+                records[orderId] = {
+                    orderId: orderId,
+                    userId: username,
+                    rawNominal: rawNominal,
+                    formattedNominal: rawNominal.toLocaleString('en-US')
+                };
+            });
+
+            return records;
+        }
+
+        function parseDocsZM(text) {
+            const records = {};
+            const lines = text.split('\n');
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+
+                const match = line.match(/^([a-zA-Z0-9_-]+?)[\s\t]*(IDT-[a-f0-9-]+)[\s\t]*\(?([0-9\.,]+)\)?/i);
+                if (match) {
+                    const userId = match[1].trim();
+                    const orderId = match[2].trim();
+                    const nomStr = match[3].replace(/[\.,]/g, '');
+                    const rawNominal = parseInt(nomStr, 10) || 0;
+
+                    records[orderId] = {
+                        orderId: orderId,
+                        userId: userId,
+                        rawNominal: rawNominal,
+                        formattedNominal: rawNominal.toLocaleString('en-US')
+                    };
+                }
+            });
+
+            return records;
+        }
+
+        function bandingkanData() {
+            const zmText = document.getElementById('zonamainInput').value;
+            const docsText = document.getElementById('docsInput').value;
+
+            const zmMap = parseZonamain(zmText);
+            const docsMap = parseDocsZM(docsText);
+
+            const allOrderIds = new Set([
+                ...Object.keys(zmMap),
+                ...Object.keys(docsMap)
+            ]);
+
+            const tbody = document.getElementById('resultBody');
+
+            if (allOrderIds.size === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            Data tidak terdeteksi. Pastikan format teks sesuai.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            let htmlRows = '';
+            let selisihCount = 0;
+
+            allOrderIds.forEach(orderId => {
+                const zm = zmMap[orderId];
+                const doc = docsMap[orderId];
+
+                let statusBadge = '';
+                let displayUser = '';
+                let displayNominal = '';
+                let isDifferent = false;
+
+                if (zm && !doc) {
+                    isDifferent = true;
+                    statusBadge = `<span class="zm-badge badge-zm">CUMA ADA DI ZONAMAIN</span>`;
+                    displayUser = zm.userId || '-';
+                    displayNominal = zm.formattedNominal;
+                } 
+                else if (!zm && doc) {
+                    isDifferent = true;
+                    statusBadge = `<span class="zm-badge badge-docs">CUMA ADA DI DOCS</span>`;
+                    displayUser = doc.userId || '-';
+                    displayNominal = doc.formattedNominal;
+                } 
+                else if (zm && doc) {
+                    const isUserMatch = !zm.userId || !doc.userId || zm.userId === doc.userId;
+                    const isNominalMatch = zm.rawNominal === doc.rawNominal;
+
+                    if (!isUserMatch || !isNominalMatch) {
+                        isDifferent = true;
+                        statusBadge = `<span class="zm-badge badge-mismatch">BEDA DATA</span>`;
+                        displayUser = isUserMatch ? zm.userId : `${zm.userId} <span style="color: #f43f5e;">(DOCS: ${doc.userId})</span>`;
+                        displayNominal = isNominalMatch ? zm.formattedNominal : `${zm.formattedNominal} <span style="color: #f43f5e;">(DOCS: ${doc.formattedNominal})</span>`;
+                    }
+                }
+
+                if (isDifferent) {
+                    selisihCount++;
+                    htmlRows += `
+                        <tr>
+                            <td>${statusBadge}</td>
+                            <td class="text-mono">${displayUser}</td>
+                            <td class="text-mono" style="color: #38bdf8;">${orderId}</td>
+                            <td class="text-mono">${displayNominal}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (selisihCount === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-success fw-bold py-4">
+                            ✔ Semua Data Cocok! Tidak ada selisih antara ZONAMAIN dan DOCS.
+                        </td>
+                    </tr>`;
+            } else {
+                tbody.innerHTML = htmlRows;
+            }
+        }
+
+        function resetFormZM() {
+            document.getElementById('zonamainInput').value = '';
+            document.getElementById('docsInput').value = '';
+            document.getElementById('resultBody').innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        Silakan tempel kedua data lalu klik "Cek Selisih Data".
+                    </td>
+                </tr>`;
+        }
+    </script>
 </body>
 </html>
